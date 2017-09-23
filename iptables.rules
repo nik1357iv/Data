@@ -1,0 +1,54 @@
+# ------------------------------------------------------------------------------
+# Отваряне на необходимите портове за входящи съединения.
+# ------------------------------------------------------------------------------
+# To allow remote SSH connections (on port 22):
+# -A TCP -p tcp --dport 22 -j ACCEPT
+
+# Transmission
+-A TCP -p tcp --dport 51413 -j ACCEPT
+-A UDP -p udp --dport 51413 -j ACCEPT
+# Ktorrent
+# -A TCP -p tcp --dport 56881 -j ACCEPT
+# -A UDP -p udp --dport 56881:56883 -j ACCEPT
+# qBittorrent
+# -A TCP -p tcp --dport 8999 -j ACCEPT
+# -A UDP -p udp --dport 8999 -j ACCEPT
+
+# За приемане на входящи TCP съединения на порт 80 за web server: 
+# -A TCP -p tcp --dport 80 -j ACCEPT
+# За приемане на входящи TCP съединения на порт 443 за web server (HTTPS): 
+# -A TCP -p tcp --dport 443 -j ACCEPT
+# За приемане на входящи UDP потоци на порт 53 за DNS server:
+# -A UDP -p udp --dport 53 -j ACCEPT
+
+# ------------------------------------------------------------------------------
+# Правила за лог
+# ------------------------------------------------------------------------------
+# 1. Лог за всички пакети, които не са маркирани в съществуващи правила.
+# Намираме правило "-A INPUT -j REJECT --reject-with icmp-proto-unreachable" и 
+# заменяме ""с -A INPUT -j LOGNREJECT или -A INPUT -j LOGNDROP
+# 2. Прехвърляне на конкретни правила към веригата за лог "-j LOGNREJECTUDP".
+# Пример: Намираме правило "-j REJECT --reject-with icmp-port-unreachable" и
+# заменяме с "-j LOGNREJECTUDP" или съответно директно за DROP с -j LOGNDROP
+
+# Задаване на лимит за логнатите пакети и съобщение за тях, 
+# както и метод за обработка. Аналогично и за друга лог верига.
+# -A LOGNDROP -p tcp -m limit --limit 5/min -j LOG --log-prefix "Denied TCP: " --log-level 7
+# -A LOGNDROP -p udp -m limit --limit 5/min -j LOG --log-prefix "Denied UDP: " --log-level 7
+# -A LOGNDROP -p icmp -m limit --limit 5/min -j LOG --log-prefix "Denied ICMP: " --log-level 7
+
+# Правила за веригите за лога: LOGNDROP / LOGNREJECT
+# -A LOGNDROP -j DROP
+# -A LOGNREJECTUDP -j REJECT --reject-with icmp-port-unreachable
+# -A LOGNREJECTTCP -j REJECT --reject-with tcp-reset
+# -A LOGNREJECT -j REJECT --reject-with icmp-proto-unreachable
+
+COMMIT
+# ------------------------------------------------------------------------------
+# ПРЕПОРЪКИ
+# ------------------------------------------------------------------------------
+# "Скриване" на компютъра ви
+# За настолна машина, може би е добре да блокирате някои входящи заявки.
+# Блокиране на ping request
+# Да се активира в sysctl
+# net.ipv4.icmp_echo_ignore_all = 1
